@@ -96,6 +96,36 @@ header-includes:
 
 ![Код программы 7-1](./image/2.png){#fig:fig1 width=70%}
 
+```
+%include 'in_out.asm' 
+
+SECTION .data
+	msg1: DB 'Сообщение № 1',0
+	msg2: DB 'Сообщение № 2',0
+	msg3: DB 'Сообщение № 3',0
+
+SECTION .text
+	GLOBAL _start
+
+_start:
+	jmp _label2
+	
+	_label1:
+		mov eax, msg1 
+		call sprintLF 
+		
+	_label2:
+		mov eax, msg2 
+		call sprintLF 
+	
+	_label3:
+		mov eax, msg3 
+		call sprintLF 
+	
+	_end:
+		call quit 
+```
+
 3. Скомпилируем и запустим.
 
 ![Исполняемый файл 7-1](./image/3.png){#fig:fig1 width=70%}
@@ -106,6 +136,38 @@ header-includes:
 
 ![Код программы 7-1-1](./image/4.png){#fig:fig1 width=70%}
 
+```
+%include 'in_out.asm' 
+
+SECTION .data
+	msg1: DB 'Сообщение № 1',0
+	msg2: DB 'Сообщение № 2',0
+	msg3: DB 'Сообщение № 3',0
+
+SECTION .text
+	GLOBAL _start
+
+_start:
+	jmp _label2
+	
+	_label1:
+		mov eax, msg1 
+		call sprintLF 
+		jmp _end
+		
+	_label2:
+		mov eax, msg2 
+		call sprintLF
+		jmp _label1 
+	
+	_label3:
+		mov eax, msg3 
+		call sprintLF 
+	
+	_end:
+		call quit 
+```
+
 6. Скомпилируем и запустим.
 
 ![Исполняемый файл 7-1-1](./image/5.png){#fig:fig1 width=70%}
@@ -115,6 +177,39 @@ header-includes:
 8. Изменим первый переход, поменяв 2-ю на 3-ю метку, а в третий блок программы добавим переход ко второй метке так, чтобы сообщения выводились в обратном порядке.
 
 ![Код программы 7-1-2](./image/7.png){#fig:fig1 width=70%}
+
+```
+%include 'in_out.asm' 
+
+SECTION .data
+	msg1: DB 'Сообщение № 1',0
+	msg2: DB 'Сообщение № 2',0
+	msg3: DB 'Сообщение № 3',0
+
+SECTION .text
+	GLOBAL _start
+
+_start:
+	jmp _label3
+	
+	_label1:
+		mov eax, msg1 
+		call sprintLF 
+		jmp _end
+		
+	_label2:
+		mov eax, msg2 
+		call sprintLF 
+		jmp _label1
+	
+	_label3:
+		mov eax, msg3 
+		call sprintLF 
+		jmp _label2
+	
+	_end:
+		call quit 
+```
 
 9. Проверим результат
 
@@ -127,6 +222,69 @@ header-includes:
 1. Напишем программу, определяющую максимум из трёх элементов. Две переменные зададим в самом коде, а третью попросим ввести с клавиатуры пользователя.
 
 ![Часть кода программы 7-2](./image/8.png){#fig:fig1 width=70%}
+
+```
+%include 'in_out.asm'
+
+SECTION .data
+	msg1 db 'Введите B: ',0h
+	msg2 db "Наибольшее число: ",0h
+	A dd '20'
+	C dd '50'
+
+SECTION .bss
+	max resb 10
+	B resb 10
+
+SECTION .text
+	GLOBAL _start
+
+_start:
+	; ---------- Вывод сообщения 'Введите B: '
+	mov eax, msg1
+	call sprint
+	
+	; ---------- Ввод 'B'
+	mov ecx,B
+	mov edx,10
+	call sread
+	
+	; ---------- Преобразование 'B' из символа в число
+	mov eax,B
+	call atoi 	; Вызов подпрограммы перевода символа в число
+	mov [B],eax 	; запись преобразованного числа в 'B'
+	
+	; ---------- Записываем 'A' в переменную 'max'
+	mov ecx,[A] 	; 'ecx = A'
+	mov [max],ecx 	; 'max = A'
+	
+	; ---------- Сравниваем 'A' и 'С' (как символы)
+	cmp ecx,[C] 	; Сравниваем 'A' и 'С'
+	jg check_B 	; если 'A>C', то переход на метку 'check_B',
+	mov ecx,[C] 	; иначе 'ecx = C'
+	mov [max],ecx 	; 'max = C'
+	
+	; ---------- Преобразование 'max(A,C)' из символа в число
+	check_B:
+	mov eax,max
+	call atoi 	; Вызов подпрограммы перевода символа в число
+	mov [max],eax 	; запись преобразованного числа в `max`
+	
+	; ---------- Сравниваем 'max(A,C)' и 'B' (как числа)
+	mov ecx,[max]
+	cmp ecx,[B] 	; Сравниваем 'max(A,C)' и 'B'
+	jg fin 		; если 'max(A,C)>B', то переход на 'fin',
+	mov ecx,[B] 	; иначе 'ecx = B'
+	mov [max],ecx
+	
+	; ---------- Вывод результата
+	fin:
+	mov eax, msg2
+	call sprint 	; Вывод сообщения 'Наибольшее число: '
+	mov eax,[max]
+	call iprintLF 	; Вывод 'max(A,B,C)'
+	call quit 	; Выход
+```
 
 2. Разберём код:
 
@@ -184,8 +342,63 @@ header-includes:
 
 1. В первой задаче требуется найти минимум значений трёх чисел: *a=17, b=23, c=45*. Напишем программу, добавив комментарии.
 
-![Фрагмент кода программы sr-1](./image/24.png){#fig:fig1 width=70%}
-![Фрагмент кода программы sr-1](./image/25.png){#fig:fig1 width=70%}
+![Код программы sr-1](./image/24.png){#fig:fig1 width=70%}
+![Код программы sr-1](./image/25.png){#fig:fig1 width=70%}
+
+```
+%include 'in_out.asm'
+
+SECTION .data
+	msg1 db 'Минимальное число = ',0h
+	msg2 db 'I вариант: A = 17, B = 23, C = 45',0h
+	
+	A dd '17'
+	B dd '23'
+	C dd '45'
+
+SECTION .bss
+	min resb 10
+
+SECTION .text
+	GLOBAL _start
+
+_start:
+	; ---------- Вывод сообщения
+	mov eax, msg2
+	call sprintLF
+	mov eax, msg1
+	call sprint
+	
+	; ---------- Преобразование A,B,C в числа
+	mov eax,A
+	call atoi 	
+	mov [A],eax 
+	mov eax,B
+	call atoi
+	mov [B],eax
+	mov eax,C
+	call atoi
+	mov [C],eax	
+	
+	; ---------- Ищем максимум. На каждорм шаге если максимум больше, пропускаем следующие шаги
+	mov ecx,[A]
+	mov [min],ecx
+	cmp ecx,[B]
+	jl comp_C
+	mov ecx,[B]
+	mov [min],ecx
+	comp_C:
+		cmp ecx,[C]
+		jl fin
+		mov ecx,[C]
+		mov [min],ecx
+	
+	; ---------- Вывод максимума
+	fin:
+		mov eax,[min]
+		call iprintLF 
+		call quit 
+```
 
 2. Скомпилируем и запустим.
 
@@ -196,6 +409,68 @@ header-includes:
 ![Код программы sr-2](./image/20.png){#fig:fig1 width=70%}
 
 ![Код программы sr-2](./image/21.png){#fig:fig1 width=70%}
+
+```
+%include 'in_out.asm'
+
+SECTION .data
+	msg2 db 'Ответ = ',0h
+	msg1 db 'I вариант',0h
+	msgX db 'Введите X >> ',0h
+	msgA db 'Введите A >> ',0h
+
+SECTION .bss
+	x RESB 10
+	a RESB 10
+	ans RESB 10
+	
+SECTION .text
+	GLOBAL _start
+
+_start:
+	; ---------- Вывод сообщения
+	mov eax, msg1
+	call sprintLF
+	; ---------- Ввод числа Х
+	mov eax, msgX
+	call sprint
+	mov ecx, x
+	mov edx, 80
+	call sread 
+	; ---------- Ввод числа А
+	mov eax, msgA
+	call sprint
+	mov ecx, a
+	mov edx, 80
+	call sread
+	; ---------- Преобразование Х и А в численный вид
+	mov eax,x
+	call atoi
+	mov [x],eax
+	mov eax,a
+	call atoi
+	mov [a],eax
+	; ---------- Записываем в ответ 8. Если Х >= А, то переходим в конец
+	mov ecx,8
+	mov [ans],ecx
+	mov ecx, [x]
+	cmp ecx, [a]
+	jge fin
+	; ---------- Если Х < А, то считаем 2А-Х
+	mov eax,[a]
+	mov ebx,2
+	mul ebx
+	mov ecx,[x]
+	sub eax,ecx
+	mov [ans], eax
+	; ---------- Вывод собщения "Ответ" и ответ
+	fin:
+		mov eax,msg2
+		call sprint 
+		mov eax,[ans]
+		call iprintLF
+		call quit 
+```
 
 4. Скомпилируем и запустим. Проверим работу программы на занчениях из варианта и пары собственных
 
